@@ -18,9 +18,12 @@
    
    Modified by Roger Nasci for HRI Fall 2015
    Version 1: added ros interface for serial communication
+              removed query for Keepon feedback
+   Version 2: incorrect version uploaded to GIT
+              
 */
-#include <Wire.h>
 #include <string.h>
+#include <Wire.h>
 
 #define cbi(sfr, bit) _SFR_BYTE(sfr) &= ~_BV(bit)
 #define sbi(sfr, bit) _SFR_BYTE(sfr) |= _BV(bit)
@@ -31,10 +34,12 @@
 #define MOTOR (byte)0x55  // Motor controller (device ID 85).  Write to 0xAA, read from 0xAB.
 
 //ROS interface for serial
+#define SERIAL_BUFFER_SIZE 256
 #include <ros.h>
 #include <std_msgs/String.h>
 ros::NodeHandle nh;
 String command;
+
 void messageCB( const std_msgs::String& msg_)
 {
     command = msg_.data;
@@ -45,6 +50,7 @@ ros::Subscriber<std_msgs::String>sub_("/keepon/command", messageCB);
 std_msgs::String str_msg;
 ros::Publisher msgPub_("/keepon/status", &str_msg);
 
+//function for returning a message to ROS
 void statusOut(const char* output)
 {
   str_msg.data = output;
@@ -52,39 +58,50 @@ void statusOut(const char* output)
   nh.spinOnce();
 }
 
-
-
-
+/*****************************************************************************************************
+Setup
+*****************************************************************************************************/
 void setup()
 {
   pinMode(SDA, OUTPUT); // Data wire on My Keepon
   pinMode(SCL, OUTPUT); // Clock wire on My Keepon
   digitalWrite(SDA, LOW);
   digitalWrite(SCL, LOW);
-  //Serial.begin(115200);
-  //Serial.begin(57600);
-  //while(!Serial);
+  
+  //setup ros nodes
   nh.initNode();
   nh.advertise(msgPub_);
   nh.subscribe(sub_);
-  pinMode(13, OUTPUT);
+  command = "NULL";
+  nh.spinOnce();
+  
+  //set up wire i2c stuff
+  delay(500);
+  bootup();
 }
 
+/*****************************************************************************************************
+Bootup
+*****************************************************************************************************/
 void bootup()
 {
   digitalWrite(SDA, LOW);
   digitalWrite(SCL, LOW);
-  //Serial.print("Waiting for My Keepon... ");
-  statusOut("Waiting for My Keepon... ");
   
-  //while (analogRead(0) < 512); // Wait until we see voltage on A0 pin
-  //Serial.println("My Keepon detected.");
+  //comment this if not connected to keepon...
+  statusOut("Waiting for My Keepon... ");
+  while (analogRead(0) < 512); // Wait until we see voltage on A0 pin
+  statusOut("My Keepon detected.");
+  
   delay(1000);
   Wire.begin();
   TWBR = ((F_CPU / MK_FREQ) - 16) / 2;
   //Serial.write((byte)0);
 }
 
+/*****************************************************************************************************
+Parsing message support functions
+*****************************************************************************************************/
 boolean isNextWord(char* msg, char* wordToCompare, int* i) {
   int j = 0;
   while (msg[j] == wordToCompare[j++]);
@@ -111,6 +128,11 @@ int nextInt(char* msg) {
   if (negative) value *= -1;
   return value;
 }
+
+
+/*****************************************************************************************************
+Parse Message
+*****************************************************************************************************/
 
 boolean parseMsg(char* msg, byte* cmd, byte* device) {
   int i = 0, value;
@@ -202,6 +224,7 @@ boolean parseMsg(char* msg, byte* cmd, byte* device) {
     else if (isNextWord(&msg[i], "STOP", &i)) {
       cmd[0] = 6;
       cmd[1] = 16;
+      //statusOut("Stopping Motion!");
     } 
     else {
       //Serial.println("Unknown command.");
@@ -232,206 +255,44 @@ boolean parseMsg(char* msg, byte* cmd, byte* device) {
   } 
   else {
     //Serial.println("Unknown command.");
+    statusOut("Unknown Command Recieved");
     return false;
   }
   return true;
 }
 
-boolean buttonState[8];
-char* buttonName[] = {
-  "DANCE", "", "HEAD", "TOUCH",
-  "RIGHT", "FRONT", "LEFT", "BACK"};
 
-boolean motorState[8];
-char* motorName[] = {
-  "PON FINISHED", "SIDE FINISHED", "TILT FINISHED", "PAN FINISHED",
-  "PON STALLED", "SIDE STALLED", "TILT STALLED", "PAN STALLED"};
-
-int encoderState[4], audioState[5], emfState[3], positionState[3];
-char* encoderName[] = {
-  "TILT NOREACH", "TILT FORWARD", "TILT BACK", "TILT UP",
-  "PON HALFDOWN", "PON UP", "PON DOWN", "PON HALFUP",
-  "SIDE CENTER", "SIDE LEFT", "SIDE RIGHT", "SIDE CENTER",
-  "PAN BACK", "PAN RIGHT", "PAN LEFT", "PAN CENTER"};
-
-unsigned long updatedButton = 0, updatedMotor = 0;
-void query() {
-  int i;
-  byte buttonResponse, motorResponse;
-  int intResponse;
-
-  if (millis() - updatedButton > 100) {
-    updatedButton = millis();
-    Wire.requestFrom((int)BUTTON, 1);
-    if (Wire.available() >= 1) {
-      buttonResponse = Wire.read();
-      for (i = 0; i < 8; i++) {
-        if (i != 1) {
-          if (buttonResponse & (1<<i)) {
-            if (!buttonState[i]) {
-              //Serial.print("BUTTON ");
-              //Serial.print(buttonName[i]);
-              //Serial.println(" ON");
-              buttonState[i] = 1;
-            }
-          }
-          else if (buttonState[i]) {
-            //Serial.print("BUTTON ");
-            //Serial.print(buttonName[i]);
-            //Serial.println(" OFF");
-            buttonState[i] = 0;
-          }
-        }
-      }
-    }
-  }
-
-  if (millis() - updatedMotor > 300) {
-    updatedMotor = millis();
-    Wire.requestFrom((int)MOTOR, 13);
-    if (Wire.available() >= 13) {
-      motorResponse = Wire.read();
-      for (i = 0; i < 8; i++) {
-        if (motorResponse & (1<<i)) {
-          if (!motorState[i]) {
-            //Serial.print("MOTOR ");
-            //Serial.println(motorName[i]);
-            motorState[i] = 1;
-          }
-        } 
-        else if (motorState[i]) {
-          motorState[i] = 0;
-        }
-      }
-      motorResponse = Wire.read();
-      if (motorResponse != audioState[0]) {
-        //Serial.print("AUDIO TEMPO ");
-        //Serial.println(motorResponse);
-        audioState[0] = motorResponse;
-      }
-      motorResponse = Wire.read();
-      if (motorResponse != audioState[1]) {
-        //Serial.print("AUDIO MEAN ");
-        //Serial.println(motorResponse);
-        audioState[1] = motorResponse;
-      }
-      motorResponse = Wire.read();
-      if (motorResponse != audioState[2]) {
-        //Serial.print("AUDIO RANGE ");
-        //Serial.println(motorResponse);
-        audioState[2] = motorResponse;
-      }
-      motorResponse = Wire.read();
-      for (i = 0; i < 4; i++) {
-        if ((motorResponse & (3<<(2*i))) != encoderState[i]) {
-          encoderState[i] = motorResponse & (3<<(2*i));
-          //Serial.print("ENCODER ");
-          //Serial.println(encoderName[4*i+(encoderState[i]>>(2*i))]);
-        }
-      }
-      motorResponse = Wire.read();
-      intResponse = motorResponse;
-      if (intResponse > 0) intResponse -= 127;
-      if (intResponse != emfState[0]) {
-        //Serial.print("EMF PONSIDE ");
-        //Serial.println(intResponse);
-        emfState[0] = intResponse;
-      }
-      motorResponse = Wire.read();
-      intResponse = motorResponse;
-      if (intResponse > 0) intResponse -= 127;
-      if (intResponse != emfState[1]) {
-        //Serial.print("EMF TILT ");
-        //Serial.println(intResponse);
-        emfState[1] = intResponse;
-      }
-      motorResponse = Wire.read();
-      intResponse = motorResponse;
-      if (intResponse > 0) intResponse -= 127;
-      if (intResponse != emfState[2]) {
-        //Serial.print("EMF PAN ");
-        //Serial.println(intResponse);
-        emfState[2] = intResponse;
-      }
-      motorResponse = Wire.read();
-      if (motorResponse != audioState[3]) {
-        //      Serial.print("AUDIO ENVELOPE ");
-        //      Serial.println(motorResponse);
-        audioState[3] = motorResponse;
-      }
-      motorResponse = Wire.read();
-      if (motorResponse != audioState[4]) {
-        //Serial.print("AUDIO BPM ");
-        //Serial.println(motorResponse);
-        audioState[4] = motorResponse;
-      }
-      motorResponse = Wire.read();
-      intResponse = motorResponse - 127;
-      if (intResponse != positionState[0]) {
-        //Serial.print("POSITION PONSIDE ");
-        //Serial.println(intResponse);
-        positionState[0] = intResponse;
-      }
-      motorResponse = Wire.read();
-      intResponse = motorResponse - 127;
-      if (intResponse != positionState[1]) {
-        //Serial.print("POSITION TILT ");
-        //Serial.println(intResponse);
-        positionState[1] = intResponse;
-      }
-      motorResponse = Wire.read();
-      intResponse = motorResponse - 127;
-      if (intResponse != positionState[2]) {
-        //Serial.print("POSITION PAN ");
-        //Serial.println(intResponse);
-        positionState[2] = intResponse;
-      }
-    }
-  }
-}
-
+/*****************************************************************************************************
+Main Loop:
+*****************************************************************************************************/
+/*look for new messages, if there is one parse it and transmit the instruction to keepon
+*/
 void loop() {
   char msg[32];
   byte device, cmd[2];
-
-while (1) {
-  nh.spinOnce();
-  delay(250);
-  digitalWrite(13, HIGH-digitalRead(13));   // blink the led
-}
-
-  //bootup();
   
- 
-  while (analogRead(0) > 512) {
-    query();
+
+   nh.spinOnce();
+   if (command != "NULL") {
+    int commandLength = command.length()+1;
+    char msg[commandLength];
+    command.toCharArray(msg, sizeof(msg) );
+    statusOut(msg);
     
-/*
-    if (Serial.available() > 0) {
-      int i = 0;
-      while ((msg[i++] = Serial.read()) != ';' && i < 30 && analogRead(0) > 512) {
-        while (Serial.available() <= 0 && analogRead(0) > 512);
+    if (parseMsg(msg, cmd, &device)) {
+      int result = 1;
+      int attempts = 0;
+      //comment this if not connected to Keepon!!!
+      
+      while (result != 0 && attempts++ < 50) {
+        Wire.beginTransmission(device);
+        Wire.write((byte)cmd[0]);
+        Wire.write((byte)cmd[1]);
+        result = (int)Wire.endTransmission();
       }
-      msg[i] = '\0';
-*/
-
-    if (command != "NULL") {
-      char msg[50];
-      command.toCharArray(msg, sizeof(msg) );
-      if (parseMsg(msg, cmd, &device)) {
-        int result = 1;
-        int attempts = 0;
-        while (result != 0 && attempts++ < 50) {
-          Wire.beginTransmission(device);
-          Wire.write((byte)cmd[0]);
-          Wire.write((byte)cmd[1]);
-          result = (int)Wire.endTransmission();
-        }
-      }
+      
     }
-       
+    command = "NULL";
   }
-  
 }
-
 
