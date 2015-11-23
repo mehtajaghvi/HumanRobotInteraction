@@ -50,7 +50,7 @@ TeleopKeepon::TeleopKeepon()
 
 	//initialize values
 	speed = 150;
-	speedStep = 75; //speed change with dipad increment/ decrement
+	speedStep = 10; //speed change with dipad increment/ decrement
 
 	ponPositions[3] = "UP";
 	ponPositions[2] = "HALFUP";
@@ -102,8 +102,8 @@ void TeleopKeepon::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 	if (abs(diPadVertical))
 	{
 		speed = speed + speedStep * diPadVertical;
-		if (speed < 0) speed = 0;
-		if (speed > 255) speed = 255;
+		if (speed < 10) speed = 10;
+		if (speed > 250) speed = 250;
 		char temp[3];
 		sprintf(temp, "%i", speed);
 
@@ -130,7 +130,7 @@ void TeleopKeepon::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 		int value = rightJoyVertical*100;
 
 		//invert controls
-		value = value * -1;
+		value = value * 1;
 
 		char temp[4];
 		sprintf(temp, "%i", value);
@@ -156,9 +156,20 @@ void TeleopKeepon::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
 	}
 
+	//side cycle
+	if (buttonY)
+	{
+		std::string cmd;
+		cmd = "MOVE SIDE CYCLE";
+		command_Out.data = cmd;
+		cmd_pub_.publish(command_Out);
+	}
+
+
 	//change PON (vertical) state
 	if(rb)
 	{
+		/*
 		if (ponState < 3)
 		{
 			ponState ++;
@@ -166,9 +177,14 @@ void TeleopKeepon::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 			command_Out.data = cmd + ponPositions[ponState];
 			cmd_pub_.publish(command_Out);
 		}
+		*/
+		std::string cmd = "MOVE PON UP";
+		command_Out.data = cmd;
+		cmd_pub_.publish(command_Out);
 	}
 	if(lb)
 	{
+		/*
 		if (ponState > 0)
 		{
 			ponState --;
@@ -176,6 +192,10 @@ void TeleopKeepon::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 			command_Out.data = cmd + ponPositions[ponState];
 			cmd_pub_.publish(command_Out);
 		}
+		*/
+		std::string cmd = "MOVE PON DOWN";
+		command_Out.data = cmd;
+		cmd_pub_.publish(command_Out);
 	}
 	
 

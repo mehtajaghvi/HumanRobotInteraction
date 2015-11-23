@@ -38,7 +38,7 @@
 ROS Interface
 *****************************************************************************************************/
 //ROS interface for serial
-#define SERIAL_BUFFER_SIZE 256
+//#define SERIAL_BUFFER_SIZE 256
 #include <ros.h>
 #include <std_msgs/String.h>
 ros::NodeHandle nh;
