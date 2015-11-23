@@ -33,6 +33,10 @@
 #define BUTTON (byte)0x50 // Button controller (device ID 80). Write to 0xA0, read from 0xA1.
 #define MOTOR (byte)0x55  // Motor controller (device ID 85).  Write to 0xAA, read from 0xAB.
 
+
+/*****************************************************************************************************
+ROS Interface
+*****************************************************************************************************/
 //ROS interface for serial
 #define SERIAL_BUFFER_SIZE 256
 #include <ros.h>
@@ -40,6 +44,7 @@
 ros::NodeHandle nh;
 String command;
 
+//Message callback 
 void messageCB( const std_msgs::String& msg_)
 {
     command = msg_.data;
@@ -290,7 +295,10 @@ void loop() {
         Wire.write((byte)cmd[1]);
         result = (int)Wire.endTransmission();
       }
+      //digitalWrite(13, HIGH-digitalRead(13));   // blink the led
+      //delay(250);
       
+    
     }
     command = "NULL";
   }

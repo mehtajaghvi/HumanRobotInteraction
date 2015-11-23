@@ -94,7 +94,7 @@ void TeleopKeepon::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 	//Stop
 	if (buttonA)
 	{
-		command_Out.data = "MOVE STOP;";
+		command_Out.data = "MOVE STOP";
 		cmd_pub_.publish(command_Out);
 	}
 
@@ -109,15 +109,15 @@ void TeleopKeepon::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
 		std::string name;
 		name = "SPEED PAN ";
-		command_Out.data = name + temp + ";";
+		command_Out.data = name + temp;
 		cmd_pub_.publish(command_Out);
 
 		name = "SPEED TILT ";
-		command_Out.data = name + temp  + ";";
+		command_Out.data = name + temp;
 		cmd_pub_.publish(command_Out);
 
 		name = "SPEED PONSIDE ";
-		command_Out.data = name + temp  + ";";
+		command_Out.data = name + temp;
 		cmd_pub_.publish(command_Out);
 	}
 
@@ -134,7 +134,7 @@ void TeleopKeepon::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
 		char temp[4];
 		sprintf(temp, "%i", value);
-		command_Out.data = cmd + temp  + ";";		
+		command_Out.data = cmd + temp;		
 		cmd_pub_.publish(command_Out);
 	}
 
@@ -151,7 +151,7 @@ void TeleopKeepon::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
 		char temp[4];
 		sprintf(temp, "%i", value);
-		command_Out.data = cmd + temp + ";";		
+		command_Out.data = cmd + temp;		
 		cmd_pub_.publish(command_Out);
 
 	}
@@ -163,7 +163,7 @@ void TeleopKeepon::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 		{
 			ponState ++;
 			std::string cmd = "MOVE PON ";
-			command_Out.data = cmd + ponPositions[ponState] + ";";
+			command_Out.data = cmd + ponPositions[ponState];
 			cmd_pub_.publish(command_Out);
 		}
 	}
@@ -173,7 +173,7 @@ void TeleopKeepon::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 		{
 			ponState --;
 			std::string cmd = "MOVE PON ";
-			command_Out.data = cmd + ponPositions[ponState] + ";";
+			command_Out.data = cmd + ponPositions[ponState];
 			cmd_pub_.publish(command_Out);
 		}
 	}

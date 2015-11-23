@@ -34,6 +34,7 @@ void setup()
   digitalWrite(SDA, LOW);
   digitalWrite(SCL, LOW);
   Serial.begin(115200);
+  Serial.println("Test");
   while(!Serial);
 }
 

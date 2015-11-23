@@ -35,7 +35,7 @@ set port to the one the arduino is connected to
 This sometimes changes.
 -->
 <node name="arduino_serial" pkg="rosserial_python" type="serial_node.py" output="screen">
-	<param name="port" value="/dev/ttyACM0" />
+	<param name="port" value="/dev/ttyUSB0" />
 </node>
 
 
