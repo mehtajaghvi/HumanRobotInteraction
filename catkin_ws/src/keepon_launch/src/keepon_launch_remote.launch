@@ -25,19 +25,10 @@ set input channel using
 	<param name="joy_node/dev" value="/dev/input/jsX" />
 </node>
 
-<!-- launch joy to keepon command translator-->
-<node name="message_interpreter" pkg="joy_keepon_translator" type="joy_keepon_translator">
-</node>
-
-
-<!-- launch arduino serial  
-set port to the one the arduino is connected to
-This sometimes changes.
+<!-- launch speakeasy controller 
 -->
-<node name="arduino_serial" pkg="rosserial_python" type="serial_node.py" output="screen">
-	<param name="port" value="/dev/ttyUSB1" />
+<node name="speakeasy_controller" pkg="speakeasy" type="speakeasy_controller.py">
 </node>
-
 
 
 </launch>

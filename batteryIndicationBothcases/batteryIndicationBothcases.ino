@@ -75,10 +75,10 @@ void loop()  {
   brightness = map(analogRead(analogPinCrank), 0, 1023, 0, 255);
   if(brightness>th)
     effort=(effort+brightness);
-
+   //fullBrightness()
   //if user started, then start the experiment
   if (userDone==0){
-    congruentCase();
+     congruentCase();
     //incongruentCase();
     Serial.print(effort);Serial.print("\t"); Serial.println(brightness);
   

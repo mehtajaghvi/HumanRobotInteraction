@@ -21,6 +21,7 @@ Version 1: rnasci: added semicolon to end of command line.
 #include <stdio.h>
 #include <string.h>
 
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 
 class TeleopKeepon
 {
@@ -144,7 +145,8 @@ void TeleopKeepon::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 		std::string cmd;
 		cmd = "MOVE PAN ";
 
-		int value = rightJoyLateral*100;
+		int value = rightJoyLateral*100 - 50;
+		value = constrain(value,-80,80);
 
 		//invert controls
 		value = value * -1;

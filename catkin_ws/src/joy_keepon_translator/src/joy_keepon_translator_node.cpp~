@@ -130,7 +130,7 @@ void TeleopKeepon::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 		int value = rightJoyVertical*100;
 
 		//invert controls
-		value = value * -1;
+		value = value * 1;
 
 		char temp[4];
 		sprintf(temp, "%i", value);
@@ -144,7 +144,7 @@ void TeleopKeepon::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 		std::string cmd;
 		cmd = "MOVE PAN ";
 
-		int value = rightJoyLateral*100;
+		int value = rightJoyLateral*100 - 50;
 
 		//invert controls
 		value = value * -1;
@@ -155,6 +155,16 @@ void TeleopKeepon::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 		cmd_pub_.publish(command_Out);
 
 	}
+
+	//side cycle
+	if (buttonY)
+	{
+		std::string cmd;
+		cmd = "MOVE SIDE CYCLE";
+		command_Out.data = cmd;
+		cmd_pub_.publish(command_Out);
+	}
+
 
 	//change PON (vertical) state
 	if(rb)

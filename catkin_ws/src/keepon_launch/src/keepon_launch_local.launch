@@ -1,8 +1,5 @@
 <launch>
-<!--This launch file launches all ROS nodes for controlling KEEPON from a local computer.
-it currently does NOT launch the crank interface, nor include these componenets
-
-
+<!--This launch file launches ROS nodes for keepon connected computer
 
 Roger Nasci
 HRI fall 2015
@@ -16,14 +13,6 @@ joy: http://wiki.ros.org/joy/Tutorials/ConfiguringALinuxJoystick
 	sudo apt-get install ros-indigo-joy
 -->
 
-<!-- launch joystic read node, JOY. 
-set input channel using 
-	ls /dev/input/ 
-	to get channel
--->
-<node name="keepon_controller" pkg="joy" type="joy_node">
-	<param name="joy_node/dev" value="/dev/input/jsX" />
-</node>
 
 <!-- launch joy to keepon command translator-->
 <node name="message_interpreter" pkg="joy_keepon_translator" type="joy_keepon_translator">
@@ -36,6 +25,11 @@ This sometimes changes.
 -->
 <node name="arduino_serial" pkg="rosserial_python" type="serial_node.py" output="screen">
 	<param name="port" value="/dev/ttyUSB1" />
+</node>
+
+<!-- launch speakeasy node
+-->
+<node name="speakEasy" pkg="speakeasy" type="speakeasy_node.py">
 </node>
 
 
